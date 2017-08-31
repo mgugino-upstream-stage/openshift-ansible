@@ -1,0 +1,17 @@
+---
+- name: Create Hosted Resources
+  hosts: oo_first_master
+  roles:
+  - role: openshift_metrics
+    when: openshift_hosted_metrics_deploy | default(false) | bool
+
+- name: Update master-config for publicLoggingURL
+  hosts: oo_masters_to_config:!oo_first_master
+  tasks:
+  - set_fact:
+      openshift_metrics_hawkular_hostname: "{{ g_metrics_hostname | default('hawkular-metrics.' ~ (openshift_master_default_subdomain | default('router.default.svc.cluster.local', true))) }}"
+  - block:
+    - include_role:
+        name: openshift_metrics
+        tasks_from: update_master_config
+    when: openshift_hosted_metrics_deploy | default(false) | bool
