@@ -1,0 +1,4 @@
+---
+openshift_config_base: "/etc/origin"
+openshift_master_config_dir: "{{ openshift_config_base }}/master"
+openshift_client_binary: oc
