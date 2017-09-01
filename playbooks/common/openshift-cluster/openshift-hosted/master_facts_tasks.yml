@@ -4,7 +4,7 @@
     openshift_config_base: "/etc/origin"
   when: openshift_config_base is not defined
 
-- name: Set openshift_master_config_dir for hosted roles:
+- name: Set openshift_master_config_dir for hosted roles
   set_fact:
     openshift_master_config_dir: "{{ openshift_config_base }}/master"
   when: openshift_master_config_dir is not defined
