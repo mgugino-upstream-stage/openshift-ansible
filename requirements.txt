@@ -8,3 +8,4 @@ pyOpenSSL==16.2.0
 #ruamel.yaml
 six==1.10.0
 passlib==1.6.5
+jmespath==0.9.3

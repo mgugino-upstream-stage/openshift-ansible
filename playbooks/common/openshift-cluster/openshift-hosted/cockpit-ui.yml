@@ -1,5 +1,5 @@
 ---
-- name: Create Hosted Resources
+- name: Create Hosted Resources - cockpit-ui
   hosts: oo_first_master
   pre_tasks:
   - name: Scrape openshift_master_public_api_url

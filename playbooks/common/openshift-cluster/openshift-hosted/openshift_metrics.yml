@@ -1,5 +1,5 @@
 ---
-- name: Create Hosted Resources
+- name: Create Hosted Resources - metrics
   hosts: oo_first_master
   roles:
   - role: openshift_metrics
