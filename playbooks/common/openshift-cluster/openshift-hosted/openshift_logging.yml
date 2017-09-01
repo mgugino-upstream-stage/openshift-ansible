@@ -2,6 +2,9 @@
 - name: Create Hosted Resources
   hosts: oo_first_master
   pre_tasks:
+  - name: Scrape openshift_master_public_api_url
+    include: master_facts_tasks.yml
+    when: openshift_master_public_api_url is not defined
   - set_fact:
       logging_hostname: "{{ openshift_hosted_logging_hostname | default('kibana.' ~ (openshift_master_default_subdomain | default('router.default.svc.cluster.local', true))) }}"
       logging_ops_hostname: "{{ openshift_hosted_logging_ops_hostname | default('kibana-ops.' ~ (openshift_master_default_subdomain | default('router.default.svc.cluster.local', true))) }}"

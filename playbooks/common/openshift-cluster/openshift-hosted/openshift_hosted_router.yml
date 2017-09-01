@@ -5,6 +5,11 @@
   - set_fact:
       openshift_hosted_router_registryurl_default: "{{ hostvars[groups.oo_first_master.0].openshift.master.registry_url }}"
     when: "'master' in hostvars[groups.oo_first_master.0].openshift and 'registry_url' in hostvars[groups.oo_first_master.0].openshift.master"
+
+  - name: Scrape openshift_master_public_api_url
+    include: master_facts_tasks.yml
+    when: openshift_master_public_api_url is not defined
+
   - include_role:
       name: openshift_hosted
       tasks_from: router.yml
