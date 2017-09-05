@@ -83,6 +83,6 @@
   with_items: "{{ openshift_hosted_routers }}"
 
 - name: Wait for pod (Routers)
-  include: wait_for_pod
+  include: wait_for_pod.yml
     l_openshift_hosted_wait_for_pod={{ openshift_hosted_router_wait }}
     l_openshift_hosted_wfp_items={{ openshift_hosted_routers }}

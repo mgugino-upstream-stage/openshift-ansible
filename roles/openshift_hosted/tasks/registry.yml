@@ -114,7 +114,7 @@
     force: "{{ True|bool in openshift_hosted_registry_force }}"
 
 - name: Wait for pod (Registry)
-  include: wait_for_pod
+  include: wait_for_pod.yml
     l_openshift_hosted_wait_for_pod={{ openshift_hosted_registry_wait }}
     l_openshift_hosted_wfp_items={{ r_openshift_hosted_registry_list }}
 

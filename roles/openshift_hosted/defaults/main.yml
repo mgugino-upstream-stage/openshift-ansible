@@ -70,8 +70,8 @@ openshift_hosted_router_registryurl: "{{ openshift_hosted_router_registryurl_def
 # Registry #
 ############
 r_openshift_hosted_registry_list:
-  - name: "{{ openshift_hosted_registry_name }}"
-    namespace: "{{ openshift_hosted_registry_namespace }}"
+- name: "{{ openshift_hosted_registry_name }}"
+  namespace: "{{ openshift_hosted_registry_namespace }}"
 
 r_openshift_hosted_registry_firewall_enabled: "{{ os_firewall_enabled | default(True) }}"
 r_openshift_hosted_registry_use_firewalld: "{{ os_firewall_use_firewalld | default(False) }}"
