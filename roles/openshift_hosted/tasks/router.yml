@@ -70,7 +70,7 @@
     replicas: "{{ item.replicas }}"
     namespace: "{{ item.namespace | default('default') }}"
     # This option is not yet implemented
-    # force_subdomain: "{{ openshift.hosted.router.force_subdomain | default(none) }}"
+    # force_subdomain: "{{ openshift_hosted_router_force_subdomain | default(none) }}"
     service_account: "{{ item.serviceaccount | default('router') }}"
     selector: "{{ item.selector | default(none) }}"
     images: "{{ item.images | default(omit) }}"
