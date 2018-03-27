@@ -1,0 +1,26 @@
+---
+- template:
+    src: 't1.j2'
+    dest: '/tmp/t1-2.txt'
+  vars:
+    temp_items:
+      - "This is item two"
+      - d1:
+          name: "This is d2"
+- include_tasks: t2.yml
+  with_items:
+    - temp_items:
+        - "This is item 3"
+        - d1:
+            name: "This is d3"
+      fname: "t3.txt"
+    - temp_items:
+        - "This is item 4"
+        - d1:
+            name: "This is d4"
+      fname: "t3.txt"
+    - temp_items:
+        - "This is item 5"
+        - d1:
+            name: "This is d5"
+      fname: "t3.txt"

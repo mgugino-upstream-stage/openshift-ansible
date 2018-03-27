@@ -6,4 +6,6 @@
   tasks:
     - debug:
         msg: "This is p2"
-    - include_tasks: ./tasks/t1.yml
+    - import_role:
+        - name: openshift_node
+          tasks_from: t1.yml

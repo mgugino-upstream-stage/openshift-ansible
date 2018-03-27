@@ -1,0 +1,8 @@
+---
+- template:
+    src: 't1.j2'
+    dest: '/tmp/{{ item.fname }}'
+  vars:
+    temp_items: "{{ item.temp_items }}"
+
+- include_tasks: t3.yml
