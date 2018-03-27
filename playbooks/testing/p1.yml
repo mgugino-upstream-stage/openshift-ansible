@@ -3,7 +3,7 @@
   tasks:
     - template:
         src: './tasks/templates/t1.j2'
-        dest: '/tmp/t1-1.txt'
+        dest: '/tmp/{{ inventory_hostname }}t1-1.txt'
       vars:
         temp_items:
           - "This is item one"

@@ -1,3 +1,8 @@
 ---
 - debug:
     msg: "Made it to t4"
+- template:
+    src: 't1.j2'
+    dest: '/tmp/{{ inventory_hostname }}-{{ item.fname }}-t4'
+  vars:
+    temp_items: "{{ item.temp_items }}"

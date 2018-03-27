@@ -1,7 +1,7 @@
 ---
 - template:
     src: 't1.j2'
-    dest: '/tmp/{{ item.fname }}'
+    dest: '/tmp/{{ inventory_hostname }}-{{ item.fname }}'
   vars:
     temp_items: "{{ item.temp_items }}"
 
