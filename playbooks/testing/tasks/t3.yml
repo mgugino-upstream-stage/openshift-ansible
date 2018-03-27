@@ -1,0 +1,4 @@
+---
+- debug:
+    msg: "Made it to t3"
+- include_tasks: t4.yml

@@ -1,0 +1,13 @@
+---
+- hosts: oo_masters_to_config
+  tasks:
+    - template:
+        src: './tasks/templates/t1.j2'
+        dest: '/tmp/t1-1.txt'
+      vars:
+        temp_items:
+          - "This is item one"
+          - d1:
+              name: "This is d1"
+
+- import_playbook: p2.yml
