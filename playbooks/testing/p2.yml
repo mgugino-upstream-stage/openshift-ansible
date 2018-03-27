@@ -1,14 +1,9 @@
 ---
 - hosts: oo_masters_to_config
+  roles:
+    - lib_utils
+    - openshift_facts
   tasks:
     - debug:
         msg: "This is p2"
     - include_tasks: ./tasks/t1.yml
-    - template:
-        src: './tasks/templates/t1.j2'
-        dest: '/tmp/t1-2.txt'
-      vars:
-        temp_items:
-          - "This is item two"
-          - d1:
-              name: "This is d2"
