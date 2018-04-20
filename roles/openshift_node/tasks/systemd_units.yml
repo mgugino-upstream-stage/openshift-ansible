@@ -8,7 +8,6 @@
   template:
     dest: "/etc/systemd/system/{{ openshift_service_type }}-node.service"
     src: "node.service.j2"
-  when: not l_is_node_system_container | bool
   notify:
   - reload systemd units
   - restart node

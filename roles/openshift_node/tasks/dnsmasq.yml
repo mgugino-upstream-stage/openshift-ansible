@@ -23,4 +23,3 @@
 
 # Dynamic NetworkManager based dispatcher
 - import_tasks: dnsmasq/network-manager.yml
-  when: network_manager_active | bool

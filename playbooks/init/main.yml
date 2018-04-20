@@ -21,8 +21,6 @@
 - import_playbook: basic_facts.yml
 
 # base_packages needs to be setup for openshift_facts.py to run correctly.
-- import_playbook: base_packages.yml
-  when: l_install_base_packages | default(False) | bool
 
 - import_playbook: cluster_facts.yml
 
