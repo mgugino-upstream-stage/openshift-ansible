@@ -1,13 +1,4 @@
 ---
-- name: Install etcd
-  package:
-    name: "etcd"
-    state: present
-  when:
-  - not etcd_is_atomic | bool
-  - not openshift_is_bootstrapped | bool
-  register: result
-  until: result is succeeded
 
 - name: Check status of etcd certificates
   stat:

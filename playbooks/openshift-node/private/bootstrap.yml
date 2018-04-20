@@ -23,19 +23,12 @@
     changed_when: no
     when: hostvars[item].openshift_is_bootstrapped | default(False) | bool
 
-- import_playbook: disable_excluders.yml
-  vars:
-    l_node_group: oo_nodes_to_bootstrap:!oo_exclude_bootstrapped_nodes
 
 - import_playbook: configure_nodes.yml
   vars:
     l_node_group: oo_nodes_to_bootstrap:!oo_exclude_bootstrapped_nodes
 
 - import_playbook: configure_bootstrap.yml
-
-- import_playbook: enable_excluders.yml
-  vars:
-    l_node_group: oo_nodes_to_bootstrap:!oo_exclude_bootstrapped_nodes
 
 - import_playbook: clean_image.yml
   vars:

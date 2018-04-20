@@ -27,16 +27,7 @@
   - role: openshift_examples
     when: openshift_install_examples | default(true) | bool
   - role: openshift_hosted_templates
-  - role: openshift_manageiq
-    when: openshift_use_manageiq | default(true) | bool
-  - role: cockpit
-    when:
-    - not openshift_is_atomic | bool
-    - openshift_deployment_type == 'openshift-enterprise'
-    - osm_use_cockpit is undefined or osm_use_cockpit | bool
-    - (openshift_deployment_subtype | default('')) != 'registry'
-  - role: flannel_register
-    when: openshift_use_flannel | default(false) | bool
+
 
 - name: Master Additional Install Checkpoint End
   hosts: all

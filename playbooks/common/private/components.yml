@@ -14,8 +14,6 @@
 #    include the masters and usually includes infra nodes.
 # 5. The init/main.yml playbook has been invoked
 
-- import_playbook: ../../openshift-glusterfs/private/config.yml
-  when: groups.oo_glusterfs_to_config | default([]) | count > 0
 
 - import_playbook: ../../openshift-hosted/private/config.yml
 
@@ -36,9 +34,6 @@
 
 - import_playbook: ../../openshift-service-catalog/private/config.yml
   when: openshift_enable_service_catalog | default(true) | bool
-
-- import_playbook: ../../openshift-management/private/config.yml
-  when: openshift_management_install_management | default(false) | bool
 
 - import_playbook: ../../openshift-descheduler/private/config.yml
   when: openshift_descheduler_install | default(false) | bool
