@@ -234,16 +234,18 @@ class ActionModule(ActionBase):
         if to_bool(manage_pass):
             # If we manage the file, we can just generate in the new path.
             return None
-
+        old_keys = ('file', 'fileName', 'file_name', 'filename')
         for idp in idps:
             if idp['kind'] == 'HTPasswdPasswordIdentityProvider':
-                if idp.get('filename') is not None:
-                    raise errors.AnsibleModuleError(
-                        'openshift_master_identity_providers contains a '
-                        'provider of kind==HTPasswdPasswordIdentityProvider '
-                        'and filename is set.  Please migrate your htpasswd'
-                        'files to /etc/origin/master/htpasswd and update your'
-                        'existing master configs before proceeding.')
+                for old_key in old_keys:
+                    if old_key in idp is not None:
+                        raise errors.AnsibleModuleError(
+                            'openshift_master_identity_providers contains a '
+                            'provider of kind==HTPasswdPasswordIdentityProvider '
+                            'and {} is set.  Please migrate your htpasswd '
+                            'files to /etc/origin/master/htpasswd and update your '
+                            'existing master configs, and remove the {} key'
+                            'before proceeding.'.format(old_key, old_key))
 
 
     def run_checks(self, hostvars, host):
