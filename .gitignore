@@ -25,8 +25,11 @@ multi_ec2.yaml
 .eggs
 cover/
 test/libvirt/install-config.yml
+test/libvirt/auth/
+test/libvirt/bin/
 test/libvirt/.openshift_install_state.json
 test/libvirt/.openshift_install.log
+test/libvirt/metadata.json
 test/libvirt/*.ign
 test/libvirt/install-config-ansible.yml
 test/libvirt/terraform/terraform.tfvars

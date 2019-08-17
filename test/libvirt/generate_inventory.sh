@@ -18,5 +18,6 @@ do
 done
 export WORKERS_LIST=$WORKERS_LIST
 export MASTERS_LIST=$MASTERS_LIST
+
 cat inv.txt.template | envsubst > inventory.txt
 sed -i "s/${NEW_LINE_SUB}/\n/g" inventory.txt

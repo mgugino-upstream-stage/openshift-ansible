@@ -1,0 +1,5 @@
+#!/bin/bash
+# source installrc first.
+export OCP_IMAGE=~/images/Fedora-Cloud-Base-30-1.2.x86_64.qcow2
+export OCP_SSH_USER="fedora"
+export OCP_WORKERS=1
