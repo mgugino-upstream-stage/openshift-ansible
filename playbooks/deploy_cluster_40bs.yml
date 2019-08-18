@@ -1,0 +1,13 @@
+---
+- name: Config bootstrap node
+  hosts: bootstrap
+  tasks:
+  - import_role:
+      name: openshift_node40
+      tasks_from: config.yml
+  - import_role:
+      name: openshift_node40
+      tasks_from: systemd.yml
+    vars:
+      excluded_services:
+      - progress.service

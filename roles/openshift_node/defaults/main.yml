@@ -11,8 +11,8 @@ openshift_node_bootstrap_endpoint: "{{ openshift_node_bootstrap_server }}/config
 
 openshift_node_packages:
   - cri-o
-  - openshift-clients{{ l_cluster_version }}
-  - openshift-hyperkube{{ l_cluster_version }}
+  - openshift-clients
+  - openshift-hyperkube
 
 openshift_node_support_packages:
   # Packages from redhat-coreos.git manifest-base.yaml
@@ -43,7 +43,7 @@ openshift_node_support_packages:
   #- cri-o
   - cri-tools
   #- toolbox
-  - nfs-utils
+  #- nfs-utils
   - NetworkManager
   - dnsmasq
   - lvm2

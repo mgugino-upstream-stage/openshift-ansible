@@ -43,19 +43,35 @@ resource "libvirt_network" "net" {
     "${var.libvirt_ip_range}",
   ]
 
-  dns = [{
+  dns {
     local_only = true
 
-    srvs = ["${flatten(list(
-      data.libvirt_network_dns_srv_template.etcd_cluster.*.rendered,
-    ))}"]
+    dynamic "srvs" {
+      for_each = data.libvirt_network_dns_srv_template.etcd_cluster.*.rendered
+      content {
+        domain   = srvs.value.domain
+        port     = srvs.value.port
+        protocol = srvs.value.protocol
+        service  = srvs.value.service
+        target   = srvs.value.target
+        weight   = srvs.value.weight
+      }
+    }
 
-    hosts = ["${flatten(list(
-      data.libvirt_network_dns_host_template.bootstrap.*.rendered,
-      data.libvirt_network_dns_host_template.masters.*.rendered,
-      data.libvirt_network_dns_host_template.etcds.*.rendered,
-    ))}"]
-  }]
+    dynamic "hosts" {
+      for_each = concat(
+        data.libvirt_network_dns_host_template.bootstrap.*.rendered,
+        data.libvirt_network_dns_host_template.bootstrap_int.*.rendered,
+        data.libvirt_network_dns_host_template.masters.*.rendered,
+        data.libvirt_network_dns_host_template.masters_int.*.rendered,
+        data.libvirt_network_dns_host_template.etcds.*.rendered,
+      )
+      content {
+        hostname = hosts.value.hostname
+        ip       = hosts.value.ip
+      }
+    }
+  }
 
   autostart = true
 }
@@ -123,21 +139,33 @@ resource "libvirt_domain" "worker" {
 }
 
 data "libvirt_network_dns_host_template" "bootstrap" {
-  count    = "${var.bootstrap_dns ? 1 : 0}"
-  ip       = "${var.libvirt_bootstrap_ip}"
-  hostname = "${var.cluster_name}-api"
+  count    = var.bootstrap_dns ? 1 : 0
+  ip       = var.libvirt_bootstrap_ip
+  hostname = "api.${var.cluster_domain}"
 }
 
 data "libvirt_network_dns_host_template" "masters" {
-  count    = "${var.master_count}"
-  ip       = "${var.libvirt_master_ips[count.index]}"
-  hostname = "${var.cluster_name}-api"
+  count    = var.master_count
+  ip       = var.libvirt_master_ips[count.index]
+  hostname = "api.${var.cluster_domain}"
+}
+
+data "libvirt_network_dns_host_template" "bootstrap_int" {
+  count    = var.bootstrap_dns ? 1 : 0
+  ip       = var.libvirt_bootstrap_ip
+  hostname = "api-int.${var.cluster_domain}"
+}
+
+data "libvirt_network_dns_host_template" "masters_int" {
+  count    = var.master_count
+  ip       = var.libvirt_master_ips[count.index]
+  hostname = "api-int.${var.cluster_domain}"
 }
 
 data "libvirt_network_dns_host_template" "etcds" {
-  count    = "${var.master_count}"
-  ip       = "${var.libvirt_master_ips[count.index]}"
-  hostname = "${var.cluster_name}-etcd-${count.index}"
+  count    = var.master_count
+  ip       = var.libvirt_master_ips[count.index]
+  hostname = "etcd-${count.index}.${var.cluster_domain}"
 }
 
 data "libvirt_network_dns_srv_template" "etcd_cluster" {

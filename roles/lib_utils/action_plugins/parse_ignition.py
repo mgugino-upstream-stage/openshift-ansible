@@ -43,6 +43,8 @@ def get_files(files_dict, systemd_dict, dir_list, data):
     # get the systemd units files we're here
     systemd_units = data.get('systemd', []).get('units', [])
     for item in systemd_units:
+        if 'contents' not in item:
+            continue
         contents = item['contents']
         if six.PY2:
             # pylint: disable=redefined-variable-type

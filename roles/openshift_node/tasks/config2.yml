@@ -1,0 +1,35 @@
+---
+#### Disable SWAP #####
+# https://docs.openshift.com/container-platform/3.4/admin_guide/overcommit.html#disabling-swap-memory
+# swapoff is a custom module that comments out swap entries in
+# /etc/fstab and runs swapoff -a, if necessary.
+- name: Disable swap
+  swapoff: {}
+
+# The atomic-openshift-node service will set this parameter on
+# startup, but if the network service is restarted this setting is
+# lost. Reference: https://bugzilla.redhat.com/show_bug.cgi?id=1372388
+- name: Enable IP Forwarding
+  sysctl:
+    name: net.ipv4.ip_forward
+    value: 1
+    sysctl_file: "/etc/sysctl.d/99-openshift.conf"
+    reload: yes
+
+# The base OS RHEL with "Minimal" installation option is
+# enabled firewalld serivce by default, it denies unexpected 10250 port.
+# Reference: https://bugzilla.redhat.com/show_bug.cgi?id=1740439
+- name: Disable firewalld service
+  systemd:
+    name: "firewalld.service"
+    enabled: false
+  register: service_status
+  failed_when:
+  - service_status is failed
+  - not ('Could not find the requested service' in service_status.msg)
+
+- name: Setting sebool container_manage_cgroup
+  seboolean:
+    name: container_manage_cgroup
+    state: yes
+    persistent: yes

@@ -1,0 +1,45 @@
+---
+- name: Install openshift support packages
+  package:
+    name: "{{ openshift_node_support_packages | join(',') }}"
+    update_cache: true
+  async: 3600
+  poll: 30
+  register: result
+  until: result is succeeded
+
+# FIXME: Creation of these directories should not be required for crio 1.14.5
+- name: Create CNI dirs for crio
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+  loop:
+  - /var/lib/cni/bin
+  - /etc/kubernetes/cni/net.d/
+  - /opt/cni/bin/
+
+- block:
+  - name: Install openshift packages
+    package:
+      name: "{{ openshift_node_packages | join(',') }}"
+      state: present
+    async: 3600
+    poll: 30
+    register: result
+    until: result is succeeded
+
+  rescue:
+  - name: Package install failure message
+    fail:
+      msg: >
+        Unable to install {{ openshift_node_packages | join(', ') }}.
+        Please ensure repos are configured properly to provide these packages
+        and indicated versions.
+
+- name: Enable the CRI-O service
+  systemd:
+    name: "crio"
+    enabled: yes

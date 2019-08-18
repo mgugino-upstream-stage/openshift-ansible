@@ -1,0 +1,43 @@
+---
+- name: Read in openshift-install
+  hosts: masters[0]
+  tasks:
+  - slurp:
+      src: "{{ openshift_install_config_path }}"
+    register: openshift_install_config_reg
+    delegate_to: localhost
+    run_once: True
+  - set_fact:
+      openshift_install_config: "{{ openshift_install_config_reg['content'] | b64decode | from_yaml }}"
+
+# We might need to access these values on each host later.
+- name: set_fact openshift_install_config across all nodes
+  hosts: nodes
+  tasks:
+  - set_fact:
+      openshift_install_config: "{{ hostvars[groups['masters'][0]].openshift_install_config }}"
+
+- name: Start masters
+  hosts: masters
+  vars:
+    openshift_bootstrap_endpoint: "https://{{ openshift_install_config['metadata']['name'] }}-api.{{ openshift_install_config['baseDomain'] }}:22623/config/master"
+  tasks:
+  - name: Wait for bootstrap endpoint to show up
+    uri:
+      url: "{{ openshift_bootstrap_endpoint }}"
+      validate_certs: false
+    delay: 10
+    retries: 60
+    register: result
+    until:
+    - "'status' in result"
+    - result.status == 200
+  - import_role:
+      name: openshift_node40
+      tasks_from: config.yml
+  - name: Make sure etcd user exists
+    user:
+      name: etcd
+  - import_role:
+      name: openshift_node40
+      tasks_from: systemd.yml

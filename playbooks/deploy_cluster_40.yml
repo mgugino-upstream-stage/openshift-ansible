@@ -1,0 +1,21 @@
+---
+# TODO(michaelgugino): break up the rest of this file into reusable chunks.
+- name: Install nodes
+  hosts: nodes
+  roles:
+  - role: container_runtime
+  tasks:
+  - name: crio 113 modular
+    command: "dnf module enable cri-o:1.13 -y"
+  - name: crio 113 modular
+    command: "dnf install crio -y"
+  - name: crio enable
+    command: "systemctl start crio"
+  - name: setup origin repo
+    command: "curl -o /etc/yum.repos.d/origin.repo https://rpms.svc.ci.openshift.org/openshift-origin-v4.1.repo"
+  - import_role:
+      name: openshift_node
+      tasks_from: install2.yml
+  - import_role:
+      name: openshift_node
+      tasks_from: config2.yml
