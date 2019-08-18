@@ -1,21 +1,137 @@
 ---
-- name: Install the systemd units
-  import_tasks: systemd_units.yml
+#### Disable SWAP #####
+# https://docs.openshift.com/container-platform/3.4/admin_guide/overcommit.html#disabling-swap-memory
+# swapoff is a custom module that comments out swap entries in
+# /etc/fstab and runs swapoff -a, if necessary.
+- name: Disable swap
+  swapoff: {}
 
-- name: Configure Node Environment Variables
-  lineinfile:
-    dest: /etc/sysconfig/{{ openshift_service_type }}-node
-    regexp: "^{{ item.key }}="
-    line: "{{ item.key }}={{ item.value }}"
-    create: true
-  with_dict: "{{ openshift_node_env_vars }}"
+# The atomic-openshift-node service will set this parameter on
+# startup, but if the network service is restarted this setting is
+# lost. Reference: https://bugzilla.redhat.com/show_bug.cgi?id=1372388
+- name: Enable IP Forwarding
+  sysctl:
+    name: net.ipv4.ip_forward
+    value: 1
+    sysctl_file: "/etc/sysctl.d/99-openshift.conf"
+    reload: yes
 
-- name: Ensure the node static pod directory exists
-  file:
-    path: "{{ openshift.common.config_base }}/node/pods"
+# The base OS RHEL with "Minimal" installation option is
+# enabled firewalld serivce by default, it denies unexpected 10250 port.
+# Reference: https://bugzilla.redhat.com/show_bug.cgi?id=1740439
+- name: Disable firewalld service
+  systemd:
+    name: "firewalld.service"
+    enabled: false
+  register: service_status
+  failed_when:
+  - service_status is failed
+  - not ('Could not find the requested service' in service_status.msg)
+
+- name: Setting sebool container_manage_cgroup
+  seboolean:
+    name: container_manage_cgroup
+    state: yes
+    persistent: yes
+
+- name: Create temp directory
+  tempfile:
     state: directory
-    mode: 0755
+  register: temp_dir
 
-- name: include aws provider credentials
-  import_tasks: aws.yml
-  when: not (openshift_node_use_instance_profiles | default(False))
+- name: Wait for bootstrap endpoint to show up
+  uri:
+    url: "{{ openshift_node_bootstrap_endpoint }}"
+    validate_certs: false
+  delay: 10
+  retries: 60
+  register: result
+  until:
+  - result.status is defined
+  - result.status == 200
+
+- name: Fetch bootstrap ignition file locally
+  uri:
+    url: "{{ openshift_node_bootstrap_endpoint }}"
+    dest: "{{ temp_dir.path }}/bootstrap.ign"
+    validate_certs: false
+
+- name: Get cluster pull-secret
+  command: >
+    oc get secret pull-secret
+    --config={{ openshift_node_kubeconfig_path }}
+    --namespace=openshift-config
+    --output=jsonpath='{.data.\.dockerconfigjson}'
+  delegate_to: localhost
+  register: oc_get
+  until:
+  - oc_get.stdout != ''
+  retries: 36
+  delay: 5
+
+- name: Write pull-secret to file
+  copy:
+    content: "{{ oc_get.stdout | b64decode }}"
+    dest: "{{ temp_dir.path }}/pull-secret.json"
+
+- name: Get cluster release image
+  command: >
+    oc get clusterversion
+    --config={{ openshift_node_kubeconfig_path }}
+    --output=jsonpath='{.items[0].status.desired.image}'
+  delegate_to: localhost
+  register: oc_get
+  until:
+  - oc_get.stdout is defined
+  - oc_get.stdout != ''
+  retries: 36
+  delay: 5
+
+- name: Set l_release_image fact
+  set_fact:
+    l_release_image: "{{ oc_get.stdout }}"
+
+- name: Pull release image
+  command: "podman pull --tls-verify={{ openshift_node_tls_verify }} --authfile {{ temp_dir.path }}/pull-secret.json {{ l_release_image }}"
+
+- name: Get machine controller daemon image from release image
+  command: "podman run --rm {{ l_release_image }} image machine-config-operator"
+  register: release_image_mcd
+
+- block:
+  - name: Pull MCD image
+    command: "podman pull --tls-verify={{ openshift_node_tls_verify }} --authfile {{ temp_dir.path }}/pull-secret.json {{ release_image_mcd.stdout }}"
+
+  - name: Apply ignition manifest
+    command: "podman run {{ podman_mounts }} {{ podman_flags }} {{ mcd_command }}"
+    vars:
+      podman_flags: "--privileged --rm --entrypoint=/usr/bin/machine-config-daemon -ti {{ release_image_mcd.stdout }}"
+      podman_mounts: "-v /:/rootfs -v /var/run/dbus:/var/run/dbus -v /run/systemd:/run/systemd"
+      mcd_command: "start --node-name {{ ansible_nodename | lower }} --once-from {{ temp_dir.path }}/bootstrap.ign --skip-reboot"
+
+  - name: Remove temp directory
+    file:
+      path: "{{ temp_dir.path }}"
+      state: absent
+
+  - name: Reboot the host and wait for it to come back
+    reboot:
+    #  reboot_timeout: 600  # default, 10 minutes
+
+  rescue:
+  - fail:
+      msg: "Ignition apply failed"
+
+- name: Wait for nodes to report ready
+  command: >
+    oc get node {{ hostvars[item].ansible_nodename | lower }}
+    --config={{ openshift_node_kubeconfig_path }}
+    --output=jsonpath='{.status.conditions[?(@.type=="Ready")].status}'
+  loop: "{{ ansible_play_batch }}"
+  delegate_to: localhost
+  run_once: true
+  register: oc_get
+  until:
+  - oc_get.stdout == "True"
+  retries: 36
+  delay: 5

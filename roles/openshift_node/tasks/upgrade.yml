@@ -1,91 +1,52 @@
 ---
-# input variables:
-# - l_docker_upgrade
-# - node_config_hook
-# - openshift_pkg_version
+- block:
+  - debug:
+      msg: "Running openshift_node_pre_cordon_hook {{ openshift_node_pre_cordon_hook }}"
+  - include_tasks: "{{ openshift_node_pre_cordon_hook }}"
+  when: openshift_node_pre_cordon_hook is defined
 
-# tasks file for openshift_node_upgrade
+- name: Cordon node prior to upgrade
+  command: >
+    oc adm cordon {{ ansible_nodename | lower }}
+    --config={{ openshift_node_kubeconfig_path }}
+  delegate_to: localhost
 
-- name: stop services for upgrade
-  import_tasks: upgrade/stop_services.yml
+- name: Drain node prior to upgrade
+  command: >
+    oc adm drain {{ ansible_nodename | lower }}
+    --config={{ openshift_node_kubeconfig_path }}
+    --force --delete-local-data --ignore-daemonsets
+  delegate_to: localhost
 
-# Ensure actually install latest package.
-- name: install docker upgrade rpm
-  command: "{{ ansible_pkg_mgr }} install -y docker{{ '-' + docker_version }}"
-  register: result
-  until: result is succeeded
-  when:
-  - l_docker_upgrade is defined
-  - l_docker_upgrade | bool
+# Run the openshift_node_pre_upgrade_hook if defined
+- block:
+  - debug:
+      msg: "Running node openshift_node_pre_upgrade_hook {{ openshift_node_pre_upgrade_hook }}"
+  - include_tasks: "{{ openshift_node_pre_upgrade_hook }}"
+  when: openshift_node_pre_upgrade_hook is defined
 
-- name: Ensure cri-o is updated
-  package:
-    name: "{{ pkg_list | join (',') }}"
-    state: latest
-  when:
-  - openshift_use_crio | bool
-  register: crio_update
-  until: crio_update is succeeded
-  vars:
-    pkg_list:
-    - cri-o
-    - cri-tools
+# Upgrade Node Packages
+- import_tasks: install.yml
 
-- name: Remove CRI-O default configuration files
-  file:
-    path: "{{ item }}"
-    state: absent
-  with_items:
-  - "/etc/cni/net.d/200-loopback.conf"
-  - "/etc/cni/net.d/100-crio-bridge.conf"
-  when: crio_update is changed
+# Apply machine config
+- import_tasks: apply_machine_config.yml
 
-- name: Ensure crictl.yaml runtime-endpoint is updated
-  yedit:
-    src: /etc/crictl.yaml
-    key: runtime-endpoint
-    value: "{{ openshift_crio_var_sock }}"
-  when:
-  - openshift_use_crio | default(False) | bool
+# Run the openshift_node_pre_uncordon_hook if defined
+- block:
+  - debug:
+      msg: "Running openshift_node_pre_uncordon_hook {{ openshift_node_pre_uncordon_hook }}"
+  - include_tasks: "{{ openshift_node_pre_uncordon_hook }}"
+  when: openshift_node_pre_uncordon_hook is defined
 
-- name: install pre-pulled rpms.
-  import_tasks: upgrade/rpm_upgrade_install.yml
+- name: Uncordon node after upgrade
+  command: >
+    oc adm uncordon {{ ansible_nodename | lower }}
+    --config={{ openshift_node_kubeconfig_path }}
+  delegate_to: localhost
 
-# TODO(michaelgugino): Remove in 3.12
-- import_tasks: selinux_container_cgroup.yml
-
-- include_tasks: "{{ node_config_hook }}"
-  when: node_config_hook is defined
-
-- import_tasks: upgrade/config_changes.yml
-
-- import_tasks: dnsmasq_install.yml
-- import_tasks: dnsmasq.yml
-
-- name: ensure dnsmasq is always restarted
-  debug:
-    msg: "Restarting dnsmasq"
-  # changed_when: True required for debug tasks to trigger handlers.
-  changed_when: True
-  notify:
-  - reload systemd units
-  - restart dnsmasq
-
-# Need to flush handlers here so dnsmasq is restarted and daemon-reload
-- meta: flush_handlers
-
-# Restart all services
-- import_tasks: upgrade/restart.yml
-
-- name: Approve node certificates when bootstrapping
-  oc_csr_approve:
-    oc_bin: "{{ hostvars[groups.oo_first_master.0]['first_master_client_binary'] }}"
-    oc_conf: "{{ openshift.common.config_base }}/master/admin.kubeconfig"
-    node_list:
-    - "{{ l_kubelet_node_name | lower }}"
-  delegate_to: "{{ groups.oo_first_master.0 }}"
-  register: node_upgrade_oc_csr_approve
-  retries: 30
-  until: node_upgrade_oc_csr_approve is succeeded
-
-- import_tasks: journald.yml
+# Run the openshift_node_post_upgrade_hook if defined
+- block:
+  - debug:
+      msg: "Running node openshift_node_post_upgrade_hook {{ openshift_node_post_upgrade_hook }}"
+  - include_tasks: "{{ openshift_node_post_upgrade_hook }}"
+  when: openshift_node_post_upgrade_hook is defined
