@@ -37,7 +37,7 @@ resource "libvirt_network" "net" {
   mode   = "nat"
   bridge = "${var.libvirt_network_if}"
 
-  domain = "${var.base_domain}"
+  domain = "${var.cluster_name}.${var.base_domain}"
 
   addresses = [
     "${var.libvirt_ip_range}",
@@ -141,31 +141,31 @@ resource "libvirt_domain" "worker" {
 data "libvirt_network_dns_host_template" "bootstrap" {
   count    = var.bootstrap_dns ? 1 : 0
   ip       = var.libvirt_bootstrap_ip
-  hostname = "api.${var.cluster_domain}"
+  hostname = "api.${var.cluster_name}.${var.base_domain}"
 }
 
 data "libvirt_network_dns_host_template" "masters" {
   count    = var.master_count
   ip       = var.libvirt_master_ips[count.index]
-  hostname = "api.${var.cluster_domain}"
+  hostname = "api.${var.cluster_name}.${var.base_domain}"
 }
 
 data "libvirt_network_dns_host_template" "bootstrap_int" {
   count    = var.bootstrap_dns ? 1 : 0
   ip       = var.libvirt_bootstrap_ip
-  hostname = "api-int.${var.cluster_domain}"
+  hostname = "api-int.${var.cluster_name}.${var.base_domain}"
 }
 
 data "libvirt_network_dns_host_template" "masters_int" {
   count    = var.master_count
   ip       = var.libvirt_master_ips[count.index]
-  hostname = "api-int.${var.cluster_domain}"
+  hostname = "api-int.${var.cluster_name}.${var.base_domain}"
 }
 
 data "libvirt_network_dns_host_template" "etcds" {
   count    = var.master_count
   ip       = var.libvirt_master_ips[count.index]
-  hostname = "etcd-${count.index}.${var.cluster_domain}"
+  hostname = "etcd-${count.index}.${var.cluster_name}.${var.base_domain}"
 }
 
 data "libvirt_network_dns_srv_template" "etcd_cluster" {
