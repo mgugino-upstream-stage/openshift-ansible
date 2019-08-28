@@ -3,16 +3,9 @@ resource "libvirt_volume" "bootstrap" {
   base_volume_id = "${var.base_volume_id}"
 }
 
-data "template_file" "user_data" {
-  template = "${file("${path.module}/user-data.tpl")}"
-  vars {
-    ssh_authorized_keys = "${var.ssh_key}"
-  }
-}
-
 resource "libvirt_cloudinit_disk" "bootstrapinit" {
   name           = "${var.cluster_name}-bs-init.iso"
-  user_data      = "${data.template_file.user_data.rendered}"
+  user_data      = templatefile("${path.module}/user-data.tpl", { ssh_authorized_keys = "${var.ssh_key}" })
 }
 
 resource "libvirt_domain" "bootstrap" {

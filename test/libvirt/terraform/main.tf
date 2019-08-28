@@ -37,7 +37,7 @@ resource "libvirt_network" "net" {
   mode   = "nat"
   bridge = "${var.libvirt_network_if}"
 
-  domain = "${var.cluster_name}.${var.base_domain}"
+  domain = "${var.cluster_domain}"
 
   addresses = [
     "${var.libvirt_ip_range}",
@@ -76,16 +76,9 @@ resource "libvirt_network" "net" {
   autostart = true
 }
 
-data "template_file" "user_data" {
-  template = "${file("${path.module}/user-data.tpl")}"
-  vars {
-    ssh_authorized_keys = "${var.ssh_key}"
-  }
-}
-
 resource "libvirt_cloudinit_disk" "commoninit" {
   name           = "${var.cluster_name}-master-init.iso"
-  user_data      = "${data.template_file.user_data.rendered}"
+  user_data      = templatefile("${path.module}/user-data.tpl", { ssh_authorized_keys = "${var.ssh_key}" })
 }
 
 resource "libvirt_domain" "master" {
@@ -141,39 +134,39 @@ resource "libvirt_domain" "worker" {
 data "libvirt_network_dns_host_template" "bootstrap" {
   count    = var.bootstrap_dns ? 1 : 0
   ip       = var.libvirt_bootstrap_ip
-  hostname = "api.${var.cluster_name}.${var.base_domain}"
+  hostname = "api.${var.cluster_domain}"
 }
 
 data "libvirt_network_dns_host_template" "masters" {
   count    = var.master_count
   ip       = var.libvirt_master_ips[count.index]
-  hostname = "api.${var.cluster_name}.${var.base_domain}"
+  hostname = "api.${var.cluster_domain}"
 }
 
 data "libvirt_network_dns_host_template" "bootstrap_int" {
   count    = var.bootstrap_dns ? 1 : 0
   ip       = var.libvirt_bootstrap_ip
-  hostname = "api-int.${var.cluster_name}.${var.base_domain}"
+  hostname = "api-int.${var.cluster_domain}"
 }
 
 data "libvirt_network_dns_host_template" "masters_int" {
   count    = var.master_count
   ip       = var.libvirt_master_ips[count.index]
-  hostname = "api-int.${var.cluster_name}.${var.base_domain}"
+  hostname = "api-int.${var.cluster_domain}"
 }
 
 data "libvirt_network_dns_host_template" "etcds" {
   count    = var.master_count
   ip       = var.libvirt_master_ips[count.index]
-  hostname = "etcd-${count.index}.${var.cluster_name}.${var.base_domain}"
+  hostname = "etcd-${count.index}.${var.cluster_domain}"
 }
 
 data "libvirt_network_dns_srv_template" "etcd_cluster" {
   count    = "${var.master_count}"
   service  = "etcd-server-ssl"
   protocol = "tcp"
-  domain   = "${var.cluster_name}.${var.base_domain}"
+  domain   = "${var.cluster_domain}"
   port     = 2380
   weight   = 10
-  target   = "${var.cluster_name}-etcd-${count.index}.${var.base_domain}"
+  target   = "${var.cluster_name}-etcd-${count.index}.${var.cluster_domain}"
 }

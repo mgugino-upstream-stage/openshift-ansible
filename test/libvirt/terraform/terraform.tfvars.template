@@ -1,6 +1,7 @@
 {
     "cluster_id": "${OCP_CLUSTER_ID}",
     "cluster_name": "${OCP_CLUSTER_NAME}",
+    "cluster_domain": "${OCP_CLUSTER_NAME}.${OCP_BASE_DOMAIN}",
     "base_domain": "${OCP_BASE_DOMAIN}",
     "master_count": ${OCP_MASTERS},
     "worker_count": ${OCP_WORKERS},

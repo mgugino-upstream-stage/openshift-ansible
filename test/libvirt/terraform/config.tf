@@ -1,5 +1,5 @@
 terraform {
-  required_version = ">= 0.10.7"
+  required_version = ">= 0.11"
 }
 
 variable "master_count" {
@@ -33,6 +33,14 @@ Example: `openshift.example.com`.
 
 Note: This field MUST be set manually prior to creating the cluster.
 This applies only to cloud platforms.
+EOF
+}
+
+variable "cluster_domain" {
+  type = "string"
+
+  description = <<EOF
+The fqdn of the cluster
 EOF
 }
 
